@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import { useEffect, useState } from 'react';
-import deploy from './deploy';
+import { deploy, getDeployedEscrow } from './deploy';
 import Escrow from './Escrow';
 
 const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -12,6 +12,7 @@ export async function approve(escrowContract, signer) {
 
 function App() {
   const [escrows, setEscrows] = useState([]);
+  const [deployedEscrows, setDeployedEscrows] = useState([]);
   const [account, setAccount] = useState();
   const [signer, setSigner] = useState();
 
@@ -29,7 +30,7 @@ function App() {
   async function newContract() {
     const beneficiary = document.getElementById('beneficiary').value;
     const arbiter = document.getElementById('arbiter').value;
-    const value = ethers.BigNumber.from(document.getElementById('wei').value);
+    const value = ethers.utils.parseUnits(document.getElementById('wei').value);
     const escrowContract = await deploy(signer, arbiter, beneficiary, value);
 
 
@@ -38,6 +39,7 @@ function App() {
       arbiter,
       beneficiary,
       value: value.toString(),
+      isApproved: false,
       handleApprove: async () => {
         escrowContract.on('Approved', () => {
           document.getElementById(escrowContract.address).className =
@@ -51,6 +53,14 @@ function App() {
     };
 
     setEscrows([...escrows, escrow]);
+  }
+
+  async function search() {
+    const address = document.getElementById('address').value;
+    const escrowDetails = await getDeployedEscrow(provider, signer, address);
+    console.log('DEPLOYED', escrowDetails);
+
+    setDeployedEscrows([...deployedEscrows, escrowDetails]);
   }
 
   return (
@@ -68,7 +78,7 @@ function App() {
         </label>
 
         <label>
-          Deposit Amount (in Wei)
+          Deposit Amount (in ETH)
           <input type="text" id="wei" />
         </label>
 
@@ -90,6 +100,32 @@ function App() {
 
         <div id="container">
           {escrows.map((escrow) => {
+            return <Escrow key={escrow.address} {...escrow} />;
+          })}
+        </div>
+      </div>
+
+      <div className="contract">
+        <h1> Deployed Escrows </h1>
+        <label>
+          Contract Address
+          <input type="text" id="address" />
+        </label>
+
+        <div
+          className="button"
+          id="search"
+          onClick={(e) => {
+            e.preventDefault();
+
+            search();
+          }}
+        >
+          Search
+        </div>
+
+        <div id="container">
+          {deployedEscrows.map((escrow) => {
             return <Escrow key={escrow.address} {...escrow} />;
           })}
         </div>

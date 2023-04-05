@@ -8,10 +8,13 @@ contract Escrow {
 
 	bool public isApproved;
 
+	event EscrowCreated(address arbiter, address  beneficiary);
+
 	constructor(address _arbiter, address _beneficiary) payable {
 		arbiter = _arbiter;
 		beneficiary = _beneficiary;
 		depositor = msg.sender;
+		emit EscrowCreated(arbiter, beneficiary);
 	}
 
 	event Approved(uint);
